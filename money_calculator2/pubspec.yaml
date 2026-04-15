@@ -1,0 +1,42 @@
+name: money_calculator2
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+# ДОБАВЬТЕ ЭТУ СЕКЦИЮ:
+environment:
+  sdk: '^3.11.0'  # или '>=3.11.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI и состояние
+  provider: ^6.1.1
+  google_fonts: ^6.1.0
+  
+  # Форматирование дат
+  intl: ^0.18.1
+  
+  # Хранение данных
+  shared_preferences: ^2.2.2
+  uuid: ^4.3.3
+  
+  # Графики
+  fl_chart: ^0.66.0
+  
+  # Swipe-удаление
+  flutter_slidable: ^3.0.1
+  
+  # Уведомления (обновлено)
+  flutter_local_notifications: ^21.0.0
+  
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
