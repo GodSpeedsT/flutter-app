@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'providers/transaction_provider.dart';
-import 'providers/settings_provider.dart';
-import 'screens/dashboard_screen.dart';
-import 'screens/history_screen.dart';
+import 'providers/app_provider.dart';
+import 'theme/app_theme.dart';
+import 'screens/home_screen.dart';
+import 'screens/analytics_screen.dart';
+import 'screens/budget_screen.dart';
+import 'screens/goals_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/add_transaction_sheet.dart';
+import 'screens/add_transaction_screen.dart';
+import 'screens/receipt_scanner_screen.dart';
+import 'screens/terms_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,121 +23,123 @@ class MoneyCalculatorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => TransactionProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-      ],
-      child: Consumer<SettingsProvider>(
-        builder: (context, settings, _) {
-          return MaterialApp(
-            title: 'Калькулятор расходов',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              brightness: Brightness.light,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF00B4D8),
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-              fontFamily: GoogleFonts.inter().fontFamily,
-              appBarTheme: const AppBarTheme(
-                elevation: 0,
-                centerTitle: true,
-                backgroundColor: Colors.transparent,
-              ),
-              cardTheme: const CardThemeData(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                ),
-              ),
-            ),
-            darkTheme: ThemeData(
-              brightness: Brightness.dark,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF00B4D8),
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-              fontFamily: GoogleFonts.inter().fontFamily,
-              appBarTheme: const AppBarTheme(
-                elevation: 0,
-                centerTitle: true,
-                backgroundColor: Colors.transparent,
-              ),
-              cardTheme: const CardThemeData(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                ),
-              ),
-            ),
-            themeMode: settings.themeMode,
-            home: const MainNavigationScreen(),
-          );
-        },
+    return ChangeNotifierProvider(
+      create: (_) => AppProvider(),
+      child: MaterialApp(
+        title: 'Калькулятор расходов',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.theme,
+        home: const MainNavigationScreen(),
       ),
     );
   }
 }
 
-class MainNavigationScreen extends StatefulWidget {
+// Главный виджет, который решает, что показывать
+class MainNavigationScreen extends StatelessWidget {
   const MainNavigationScreen({super.key});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  Widget build(BuildContext context) {
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, child) {
+        // Если условия не приняты - показываем экран с условиями
+        if (appProvider.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primary,
+              ),
+            ),
+          );
+        }
+        if(!appProvider.termsAccepted) {
+          return const TermsScreen();
+        }
+        // Если условия приняты - показываем основное приложение
+        return const MainAppScreen();
+      },
+    );
+  }
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+// Основной экран приложения с навигацией
+class MainAppScreen extends StatefulWidget {
+  const MainAppScreen({super.key});
+
+  @override
+  State<MainAppScreen> createState() => _MainAppScreenState();
+}
+
+class _MainAppScreenState extends State<MainAppScreen> {
   int _currentIndex = 0;
-  
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const HistoryScreen(),
-    const ProfileScreen(),
+
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    AnalyticsScreen(),
+    ReceiptScannerScreen(),
+    BudgetScreen(),
+    GoalsScreen(),
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      backgroundColor: AppTheme.background,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: _screens[_currentIndex],
+      ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: AppTheme.surface,
+        indicatorColor: AppTheme.primary.withOpacity(0.15),
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onDestinationSelected: (index) =>
+            setState(() => _currentIndex = index),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
+            icon: Icon(Icons.home_outlined, color: AppTheme.textSecondary),
+            selectedIcon: Icon(Icons.home, color: AppTheme.primary),
             label: 'Главная',
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'История',
+            icon: Icon(Icons.bar_chart_outlined, color: AppTheme.textSecondary),
+            selectedIcon: Icon(Icons.bar_chart, color: AppTheme.primary),
+            label: 'Аналитика',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(Icons.receipt_outlined, color: AppTheme.textSecondary),
+            selectedIcon: Icon(Icons.receipt, color: AppTheme.primary),
+            label: 'Чек',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined, color: AppTheme.textSecondary),
+            selectedIcon: Icon(Icons.account_balance_wallet, color: AppTheme.primary),
+            label: 'Бюджет',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.savings_outlined, color: AppTheme.textSecondary),
+            selectedIcon: Icon(Icons.savings, color: AppTheme.primary),
+            label: 'Цели',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline, color: AppTheme.textSecondary),
+            selectedIcon: Icon(Icons.person, color: AppTheme.primary),
             label: 'Профиль',
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (context) => const AddTransactionSheet(),
-          );
-        },
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.background,
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+        ),
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
